@@ -27,7 +27,7 @@ exports.getDepartmentList = async (req, res) => {
   try {
     const { search, page = 1, limit = 20 } = req.body;
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    
+
     let whereClause = {};
     if (search) {
       whereClause.deptname = { $regex: search, $options: "i" };
@@ -288,7 +288,7 @@ exports.updateAddress = async (req, res) => {
 
     address.set(req.body);
     await address.save();
-    
+
     return res.status(200).json({ success: true, message: "Address updated successfully", data: address });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
