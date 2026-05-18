@@ -1,0 +1,128 @@
+const db = require("../models");
+const crypto = require("crypto");
+
+const getNextId = async (model) => {
+  const lastRecord = await model.findOne().sort({ id: -1 });
+  return lastRecord && typeof lastRecord.id === "number" ? lastRecord.id + 1 : 1001;
+};
+
+/**
+ * LIST CUSTOMERS
+ */
+exports.listCustomers = async (req, res) => {
+  try {
+    const customers = await db.customer_info.find({ company_id: 26 })
+      .sort({ created_at: -1 });
+    res.status(200).json({ success: true, data: customers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * CREATE CUSTOMER (Refined with all ERP required fields)
+ */
+exports.createCustomer = async (req, res) => {
+  try {
+    const { trn_name, customer_code, customer_phone, customer_address_1, customer_city, user_id } = req.body;
+    const nextId = await getNextId(db.customer_info);
+    
+    const customerData = {
+      id: nextId,
+      uuid: crypto.randomUUID(),
+      trn_name,
+      customer_code: customer_code || `CUS-${Date.now()}`,
+      customer_phone,
+      customer_address_1,
+      customer_city,
+      user_id: user_id || 1,
+      status: 1,
+      current_stage: 'Approved',
+      organisation_id: 1,
+      company_id: 26,
+      location_id: 30,
+      
+      profile_image: "", 
+      customer_address_2: "",
+      trn_no: "",
+      trn_name: trn_name,
+      customer_state: "",
+      customer_zipcode: "",
+      radius: "0",
+      customer_phone_1: "",
+      customer_phone_2: "",
+      customer_address_1_lat: "0",
+      customer_address_1_lang: "0",
+      customer_address_2_lat: "0",
+      customer_address_2_lang: "0",
+      balance: 0,
+      credit_limit: 0,
+      credit_days: 0,
+      due_on: "1",
+      source: 0,
+      is_lob: 0,
+      sales_enable: "1",
+      return_enable: "1",
+      collection_enable: "1",
+      print_enable: "1",
+      geo_checking: "0",
+      creation_source: "web",
+      created_by: "system"
+    };
+
+    console.log("Creating customer in MongoDB with full ERP defaults...");
+
+    const newCustomer = await db.customer_info.create(customerData);
+    res.status(201).json({ success: true, message: "Customer created successfully", data: newCustomer });
+  } catch (error) {
+    console.error("CUSTOMER CREATE ERROR:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Database Error",
+      detail: error.message 
+    });
+  }
+};
+
+/**
+ * UPDATE CUSTOMER
+ */
+exports.updateCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const customer = await db.customer_info.findOne({
+      $or: [
+        { id: isNaN(id) ? null : Number(id) },
+        { _id: id }
+      ].filter(x => x.id !== null || x._id !== null)
+    });
+    if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
+
+    customer.set(req.body);
+    await customer.save();
+    res.status(200).json({ success: true, message: "Customer updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * DELETE CUSTOMER
+ */
+exports.deleteCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const customer = await db.customer_info.findOne({
+      $or: [
+        { id: isNaN(id) ? null : Number(id) },
+        { _id: id }
+      ].filter(x => x.id !== null || x._id !== null)
+    });
+    if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
+
+    await customer.deleteOne();
+    res.status(200).json({ success: true, message: "Customer deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
