@@ -2,7 +2,7 @@ const db = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = "charity_erp_secret_key";
+const JWT_SECRET = process.env.JWT_SECRET || "charity_erp_secret_key";
 
 exports.login = async (req, res) => {
   try {

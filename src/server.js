@@ -11,8 +11,24 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5620;
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5173",   // Vite dev server (admin frontend)
+  "http://localhost:5174",   // Vite alternate port
+  "http://localhost:3000",   // Create-react-app fallback
+  "https://charity-backend-gcnw.onrender.com", // Old render frontend (if needed)
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS policy: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
 app.use(express.json());
+
 
 // Base welcome route for status/hosting checks
 app.get("/", (req, res) => {

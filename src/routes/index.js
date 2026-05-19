@@ -14,7 +14,8 @@ const db = require("../models");
 const bcrypt = require("bcrypt");
 
 // Admin Auth Middleware
-const JWT_SECRET = "charity_erp_secret_key";
+const JWT_SECRET = process.env.JWT_SECRET || "charity_erp_secret_key";
+
 const adminOnly = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
