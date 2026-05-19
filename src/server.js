@@ -16,6 +16,7 @@ const allowedOrigins = [
   "http://localhost:5174",   // Vite alternate port
   "http://localhost:3000",   // Create-react-app fallback
   "https://charity-backend-gcnw.onrender.com", // Old render frontend (if needed)
+  "https://charity-c2sz96l6d-jts-projects-0424a64c.vercel.app" // Vercel frontend
 ];
 
 app.use(cors({
