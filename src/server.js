@@ -11,13 +11,21 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5620;
 
-const allowedOrigins = [
+const defaultAllowedOrigins = [
   "http://localhost:5173",   // Vite dev server (admin frontend)
   "http://localhost:5174",   // Vite alternate port
   "http://localhost:3000",   // Create-react-app fallback
   "https://charity-backend-gcnw.onrender.com", // Old render frontend (if needed)
-  "https://charity-c2sz96l6d-jts-projects-0424a64c.vercel.app" // Vercel frontend
+  "https://charity-c2sz96l6d-jts-projects-0424a64c.vercel.app", // Old Vercel frontend
+  "https://charity-web-six.vercel.app", // Current Vercel frontend
 ];
+
+const envAllowedOrigins = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
 
 const path = require("path");
 
