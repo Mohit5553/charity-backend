@@ -22,6 +22,10 @@ const ItemLocationMasterSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    item_image: {
+      type: String,
+      default: ""
+    },
     status: {
       type: Number,
       default: 1

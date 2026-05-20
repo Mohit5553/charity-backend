@@ -25,6 +25,7 @@ const CustomerInfoSchema = new mongoose.Schema(
     customer_phone: String,
     customer_phone_1: String,
     customer_phone_2: String,
+    customer_email: String,
     customer_address_1: String,
     customer_address_2: String,
     customer_city: String,

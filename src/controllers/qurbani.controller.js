@@ -39,7 +39,7 @@ exports.listBookings = async (req, res) => {
  */
 exports.listShareCodes = async (req, res) => {
   try {
-    const items = await db.item_location_master.find({ status: 1 }).sort({ item_name: 1 }).lean();
+    const items = await db.item_location_master.find({ status: { $ne: 0 } }).sort({ item_name: 1 }).lean();
 
     const shareCodes = [];
     for (let item of items) {
@@ -50,6 +50,7 @@ exports.listShareCodes = async (req, res) => {
         code: item.item_code,
         name: item.item_name,
         price: price,
+        image: item.item_image || "",
         display: `${item.item_name} - Rs ${price}`
       });
     }

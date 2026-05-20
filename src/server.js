@@ -19,6 +19,8 @@ const allowedOrigins = [
   "https://charity-c2sz96l6d-jts-projects-0424a64c.vercel.app" // Vercel frontend
 ];
 
+const path = require("path");
+
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, curl, Postman)
@@ -29,6 +31,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
 // Base welcome route for status/hosting checks

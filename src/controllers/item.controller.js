@@ -82,7 +82,8 @@ exports.createItem = async (req, res) => {
       : `ITM-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const nextId = await getNextId(db.item_location_master);
-    const newItem = await db.item_location_master.create({
+    
+    const itemData = {
       id: nextId,
       item_code: generatedCode,
       item_name,
@@ -91,7 +92,13 @@ exports.createItem = async (req, res) => {
       company_id: Number(company_id),
       location_id: Number(location_id),
       status: 1,
-    });
+    };
+
+    if (req.file) {
+      itemData.item_image = req.file.filename;
+    }
+
+    const newItem = await db.item_location_master.create(itemData);
 
     // Create price record if cost is provided
     if (itemcost) {
@@ -135,15 +142,25 @@ exports.updateItem = async (req, res) => {
     const { id } = req.params;
     const { item_name, item_description, itemprice, status } = req.body;
     
-    const item = await db.item_location_master.findOne({
-      $or: [
-        { id: isNaN(id) ? null : Number(id) },
-        { _id: id }
-      ].filter(x => x.id !== null || x._id !== null)
-    });
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    const query = [];
+    if (!isNaN(id)) query.push({ id: Number(id) });
+    if (isObjectId) query.push({ _id: id });
+    
+    if (query.length === 0) return res.status(400).json({ success: false, message: 'Invalid ID format.' });
+    
+    const item = await db.item_location_master.findOne({ $or: query });
     if (!item) return res.status(404).json({ success: false, message: 'Item not found.' });
     
-    item.set({ item_name, item_description, itemprice, status });
+    const updateData = { item_name, item_description, itemprice };
+    if (status !== undefined && status !== '') {
+      updateData.status = Number(status);
+    }
+    if (req.file) {
+      updateData.item_image = req.file.filename;
+    }
+    
+    item.set(updateData);
     await item.save();
     
     return res.status(200).json({ success: true, message: 'Item updated successfully.', data: item });
@@ -159,12 +176,14 @@ exports.updateItem = async (req, res) => {
 exports.deleteItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = await db.item_location_master.findOne({
-      $or: [
-        { id: isNaN(id) ? null : Number(id) },
-        { _id: id }
-      ].filter(x => x.id !== null || x._id !== null)
-    });
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    const query = [];
+    if (!isNaN(id)) query.push({ id: Number(id) });
+    if (isObjectId) query.push({ _id: id });
+    
+    if (query.length === 0) return res.status(400).json({ success: false, message: 'Invalid ID format.' });
+    
+    const item = await db.item_location_master.findOne({ $or: query });
     if (!item) return res.status(404).json({ success: false, message: 'Item not found.' });
     
     await item.deleteOne();

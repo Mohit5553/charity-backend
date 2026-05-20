@@ -13,7 +13,7 @@ const getNextId = async (model) => {
 exports.createVendor = async (req, res) => {
   try {
     const { firstname, lastname, email, password, mobile } = req.body;
-    
+
     if (!email || !firstname || !lastname || !mobile || !password) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
@@ -32,9 +32,9 @@ exports.createVendor = async (req, res) => {
       firstname,
       lastname,
       email,
-      password, 
+      password,
       mobile,
-      role_id: 2, 
+      role_id: 2,
       status: 1,
       is_approved_by_admin: 1,
       usertype: 2,
@@ -48,19 +48,23 @@ exports.createVendor = async (req, res) => {
       remember_token: ""
     };
 
+    if (req.file) {
+      userData.profile_image = req.file.filename;
+    }
+
     console.log("Attempting to create Mongoose user with data:", userData);
 
     const newUser = await db.user_master.create(userData);
 
-    res.status(201).json({ 
-      success: true, 
-      message: "Vendor created successfully", 
-      data: { id: newUser.id, email: newUser.email } 
+    res.status(201).json({
+      success: true,
+      message: "Vendor created successfully",
+      data: { id: newUser.id, email: newUser.email }
     });
   } catch (error) {
     console.error("FULL DATABASE ERROR:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Database Error",
       detail: error.message,
       stack: error.message
@@ -75,7 +79,7 @@ exports.listVendors = async (req, res) => {
   try {
     const vendors = await db.user_master.find(
       { role_id: 2 },
-      "id firstname lastname email mobile created_at"
+      "id firstname lastname email mobile created_at profile_image"
     ).sort({ created_at: -1 });
     res.status(200).json({ success: true, data: vendors });
   } catch (error) {
@@ -90,18 +94,25 @@ exports.updateVendor = async (req, res) => {
   try {
     const { id } = req.params;
     const { firstname, lastname, email, mobile, password } = req.body;
+
+    const conditions = [];
+    if (!isNaN(id)) conditions.push({ id: Number(id) });
+    if (/^[0-9a-fA-F]{24}$/.test(id)) conditions.push({ _id: id });
     
-    const user = await db.user_master.findOne({
-      $or: [
-        { id: isNaN(id) ? null : Number(id) },
-        { _id: id }
-      ].filter(x => x.id !== null || x._id !== null)
-    });
+    if (conditions.length === 0) {
+      return res.status(400).json({ success: false, message: "Invalid Vendor ID format" });
+    }
+    
+    const user = await db.user_master.findOne({ $or: conditions });
     if (!user) return res.status(404).json({ success: false, message: "Vendor not found" });
 
     let updateData = { firstname, lastname, email, mobile };
     if (password) {
       updateData.password = await bcrypt.hash(password, 8);
+    }
+
+    if (req.file) {
+      updateData.profile_image = req.file.filename;
     }
 
     user.set(updateData);
@@ -118,12 +129,15 @@ exports.updateVendor = async (req, res) => {
 exports.deleteVendor = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await db.user_master.findOne({
-      $or: [
-        { id: isNaN(id) ? null : Number(id) },
-        { _id: id }
-      ].filter(x => x.id !== null || x._id !== null)
-    });
+    const conditions = [];
+    if (!isNaN(id)) conditions.push({ id: Number(id) });
+    if (/^[0-9a-fA-F]{24}$/.test(id)) conditions.push({ _id: id });
+    
+    if (conditions.length === 0) {
+      return res.status(400).json({ success: false, message: "Invalid Vendor ID format" });
+    }
+
+    const user = await db.user_master.findOne({ $or: conditions });
     if (!user) return res.status(404).json({ success: false, message: "Vendor not found" });
 
     await user.deleteOne();

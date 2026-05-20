@@ -12,7 +12,23 @@ const qurbanidateController = require("../controllers/qurbanidate.controller");
 const departmentController = require("../controllers/department.controller");
 const db = require("../models");
 const bcrypt = require("bcrypt");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, "../../uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, '-'));
+  },
+});
+const upload = multer({ storage: storage });
 // Admin Auth Middleware
 const JWT_SECRET = process.env.JWT_SECRET || "charity_erp_secret_key";
 
@@ -50,8 +66,8 @@ router.get("/setup", async (req, res) => {
 
 // Items (View: Public, Create/Update/Delete: Admin Only)
 router.get("/charity-items", itemController.getCharityItemList);
-router.post("/charity-items", adminOnly, itemController.createItem);
-router.put("/charity-items/:id", adminOnly, itemController.updateItem);
+router.post("/charity-items", adminOnly, upload.single("item_image"), itemController.createItem);
+router.put("/charity-items/:id", adminOnly, upload.single("item_image"), itemController.updateItem);
 router.delete("/charity-items/:id", adminOnly, itemController.deleteItem);
 
 // Charity Data
@@ -59,14 +75,14 @@ router.get("/charity-data", charityController.list);
 
 // User/Vendor Management (FULL CRUD)
 router.get("/users/vendors", userController.listVendors);
-router.post("/users/vendors", userController.createVendor);
-router.put("/users/vendors/:id", userController.updateVendor);
+router.post("/users/vendors", upload.single("profile_image"), userController.createVendor);
+router.put("/users/vendors/:id", upload.single("profile_image"), userController.updateVendor);
 router.delete("/users/vendors/:id", userController.deleteVendor);
 
 // Customer Management
 router.get("/customers", customerController.listCustomers);
-router.post("/customers", customerController.createCustomer);
-router.put("/customers/:id", customerController.updateCustomer);
+router.post("/customers", upload.single("profile_image"), customerController.createCustomer);
+router.put("/customers/:id", upload.single("profile_image"), customerController.updateCustomer);
 router.delete("/customers/:id", customerController.deleteCustomer);
 
 // Qurbani Booking Management
@@ -90,8 +106,8 @@ router.delete("/qurbani-dates/:id", adminOnly, qurbanidateController.delete);
 
 // Department Master CRUD routes (Create/Update/Delete gated by adminOnly)
 router.get("/departments-master", departmentController.list);
-router.post("/departments-master", adminOnly, departmentController.create);
-router.put("/departments-master/:id", adminOnly, departmentController.update);
+router.post("/departments-master", adminOnly, upload.single("dept_image"), departmentController.create);
+router.put("/departments-master/:id", adminOnly, upload.single("dept_image"), departmentController.update);
 router.delete("/departments-master/:id", adminOnly, departmentController.delete);
 
 // Temporary Migration Route (MongoDB Clean Placeholder)

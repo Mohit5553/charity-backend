@@ -24,7 +24,7 @@ exports.listCustomers = async (req, res) => {
  */
 exports.createCustomer = async (req, res) => {
   try {
-    const { trn_name, customer_code, customer_phone, customer_address_1, customer_city, user_id } = req.body;
+    const { trn_name, customer_code, customer_phone, customer_email, customer_address_1, customer_city, user_id } = req.body;
     const nextId = await getNextId(db.customer_info);
     
     const customerData = {
@@ -33,6 +33,7 @@ exports.createCustomer = async (req, res) => {
       trn_name,
       customer_code: customer_code || `CUS-${Date.now()}`,
       customer_phone,
+      customer_email: customer_email || "",
       customer_address_1,
       customer_city,
       user_id: user_id || 1,
@@ -42,7 +43,7 @@ exports.createCustomer = async (req, res) => {
       company_id: 26,
       location_id: 30,
       
-      profile_image: "", 
+      profile_image: req.file ? req.file.filename : "", 
       customer_address_2: "",
       trn_no: "",
       trn_name: trn_name,
@@ -90,15 +91,23 @@ exports.createCustomer = async (req, res) => {
 exports.updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const customer = await db.customer_info.findOne({
-      $or: [
-        { id: isNaN(id) ? null : Number(id) },
-        { _id: id }
-      ].filter(x => x.id !== null || x._id !== null)
-    });
+    const conditions = [];
+    if (!isNaN(id)) conditions.push({ id: Number(id) });
+    if (/^[0-9a-fA-F]{24}$/.test(id)) conditions.push({ _id: id });
+    
+    if (conditions.length === 0) {
+      return res.status(400).json({ success: false, message: "Invalid Customer ID format" });
+    }
+
+    const customer = await db.customer_info.findOne({ $or: conditions });
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
 
-    customer.set(req.body);
+    const updateData = { ...req.body };
+    if (req.file) {
+      updateData.profile_image = req.file.filename;
+    }
+
+    customer.set(updateData);
     await customer.save();
     res.status(200).json({ success: true, message: "Customer updated successfully" });
   } catch (error) {
@@ -112,12 +121,15 @@ exports.updateCustomer = async (req, res) => {
 exports.deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const customer = await db.customer_info.findOne({
-      $or: [
-        { id: isNaN(id) ? null : Number(id) },
-        { _id: id }
-      ].filter(x => x.id !== null || x._id !== null)
-    });
+    const conditions = [];
+    if (!isNaN(id)) conditions.push({ id: Number(id) });
+    if (/^[0-9a-fA-F]{24}$/.test(id)) conditions.push({ _id: id });
+    
+    if (conditions.length === 0) {
+      return res.status(400).json({ success: false, message: "Invalid Customer ID format" });
+    }
+
+    const customer = await db.customer_info.findOne({ $or: conditions });
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
 
     await customer.deleteOne();

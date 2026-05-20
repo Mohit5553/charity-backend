@@ -21,7 +21,11 @@ const ItemDepartmentSchema = new mongoose.Schema(
       default: 1
     },
     company_id: Number,
-    location_id: Number
+    location_id: Number,
+    dept_image: {
+      type: String,
+      default: ""
+    }
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" }

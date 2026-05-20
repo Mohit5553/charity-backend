@@ -24,7 +24,7 @@ exports.create = async (req, res) => {
     }
 
     const nextId = await getNextId(db.item_department);
-    const newDept = await db.item_department.create({
+    const deptData = {
       id: nextId,
       deptcode: deptcode || `DEPT-${Math.floor(1000 + Math.random() * 9000)}`,
       deptname,
@@ -33,7 +33,11 @@ exports.create = async (req, res) => {
       status: status !== undefined ? Number(status) : 1,
       company_id: company_id ? Number(company_id) : 26,
       location_id: location_id ? Number(location_id) : 30
-    });
+    };
+    if (req.file) {
+      deptData.dept_image = req.file.filename;
+    }
+    const newDept = await db.item_department.create(deptData);
 
     res.status(201).json({ success: true, message: "Department created successfully", data: newDept });
   } catch (error) {
@@ -61,6 +65,7 @@ exports.update = async (req, res) => {
     if (status !== undefined) dept.status = Number(status);
     if (company_id) dept.company_id = Number(company_id);
     if (location_id) dept.location_id = Number(location_id);
+    if (req.file) dept.dept_image = req.file.filename;
 
     await dept.save();
     res.status(200).json({ success: true, message: "Department updated successfully", data: dept });

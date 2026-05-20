@@ -4,6 +4,10 @@ const { v4: uuidv4 } = require("uuid");
 
 const UserSchema = new mongoose.Schema(
   {
+    id: {
+      type: Number,
+      unique: true
+    },
     uuid: {
       type: String,
       default: uuidv4,
@@ -61,7 +65,11 @@ const UserSchema = new mongoose.Schema(
     parent_id: String,
     api_token: String,
     remember_token: String,
-    email_verified_at: Date
+    email_verified_at: Date,
+    profile_image: {
+      type: String,
+      default: ""
+    }
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" }
